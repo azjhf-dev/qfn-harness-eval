@@ -1,0 +1,33 @@
+{
+  "_comment": "Copy to config.json. Every value here is a setting; nothing is hardcoded in evalkit.",
+  "endpoints": {
+    "basalt-5090": {"base_url": "http://proxmox-gpu:8080/v1", "model": "Qwen3.8-FN-NVFP4-DQ6_K", "api_key_env": "", "note": "Basalt serve, RTX 5090 + 5060 Ti"},
+    "omlx-mac":    {"base_url": "http://mac.local:8000/v1", "model": "Inkling-2-Mini-oQ4e-mtp", "api_key_env": "", "note": "oMLX on a Mac"}
+  },
+  "run": {
+    "modes": ["bare", "harness", "harness_compile"],
+    "roles": ["reviewer", "patcher"],
+    "repeats": 3,
+    "temperature": 0.6,
+    "max_tokens": 4096,
+    "reasoning_effort": "",
+    "request_timeout_s": 900,
+    "harness_max_turns": 4
+  },
+  "rate_limit": {
+    "min_interval_s": 1.0,
+    "max_concurrency": 1,
+    "max_retries": 4,
+    "backoff_base_s": 2.0,
+    "backoff_max_s": 60.0,
+    "honor_retry_after": true
+  },
+  "harness": {
+    "system_prompt_file": "docs/harness_system_prompt.txt",
+    "external_cmd": "",
+    "external_cmd_note": "Optional: shell template to drive a real Pi (earendil-works/pi) session instead of the built-in loop. Unverified, see docs/CLAIMS.md."
+  },
+  "compile_check_cmd": "python -m py_compile {file}",
+  "tasks_dir": "tasks",
+  "results_dir": "results"
+}
