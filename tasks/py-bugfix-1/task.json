@@ -1,1 +1,1 @@
-{"roles": ["patcher"], "source_file": "stats.py", "bug": "mean_of_positive() divides by len(xs) instead of the number of positive values, and crashes on an empty list. It should return 0.0 when there are no positive values.", "test_cmd": "python test_stats.py"}
+{"roles": ["patcher"], "difficulty": 1, "source_file": "stats.py", "bug": "mean_of_positive() divides by len(xs) instead of the number of positive values, and crashes on an empty list. It should return 0.0 when there are no positive values.", "test_cmd": "python test_stats.py"}

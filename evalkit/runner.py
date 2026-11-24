@@ -86,6 +86,9 @@ def main(argv=None):
     cfg = json.load(open(a.config))
     eps = a.endpoint or list(cfg["endpoints"])
     tasks = list(load_tasks(cfg["tasks_dir"]))
+    sel = cfg["run"].get("tasks")          # optional list of task ids; empty/absent = all
+    if sel:
+        tasks = [t for t in tasks if t["id"] in sel]
     plan = [(e, t, r, m, i) for e in eps for t in tasks for r in cfg["run"]["roles"] for m in cfg["run"]["modes"] for i in range(cfg["run"]["repeats"])
             if (r in t["roles"])]
     print(f"{len(plan)} runs planned across {len(eps)} endpoint(s), {len(tasks)} task(s)")
@@ -100,7 +103,7 @@ def main(argv=None):
                 res = run_one(clients[e], cfg, t, r, m)
             except Exception as ex:
                 res = {"error": str(ex)[:300]}
-            row = {"endpoint": e, "model": cfg["endpoints"][e]["model"], "task": t["id"], "role": r, "mode": m, "repeat": i, **res}
+            row = {"endpoint": e, "model": cfg["endpoints"][e]["model"], "task": t["id"], "difficulty": t.get("difficulty"), "role": r, "mode": m, "repeat": i, **res}
             fh.write(json.dumps(row) + "\n"); fh.flush()
             print(e, t["id"], r, m, i, res.get("score", res.get("error")))
     print("wrote", out)

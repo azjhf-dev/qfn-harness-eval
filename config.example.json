@@ -1,13 +1,31 @@
 {
   "_comment": "Copy to config.json. Every value here is a setting; nothing is hardcoded in evalkit.",
   "endpoints": {
-    "basalt-5090": {"base_url": "http://proxmox-gpu:8080/v1", "model": "Qwen3.8-FN-NVFP4-DQ6_K", "api_key_env": "", "note": "Basalt serve, RTX 5090 + 5060 Ti"},
-    "omlx-mac":    {"base_url": "http://mac.local:8000/v1", "model": "Inkling-2-Mini-oQ4e-mtp", "api_key_env": "", "note": "oMLX on a Mac"}
+    "basalt-5090": {
+      "base_url": "http://proxmox-gpu:8080/v1",
+      "model": "Qwen3.8-FN-NVFP4-DQ6_K",
+      "api_key_env": "",
+      "note": "Basalt serve, RTX 5090 + 5060 Ti"
+    },
+    "omlx-mac": {
+      "base_url": "http://mac.local:8000/v1",
+      "model": "Inkling-2-Mini-oQ4e-mtp",
+      "api_key_env": "",
+      "note": "oMLX on a Mac"
+    }
   },
   "run": {
-    "modes": ["bare", "harness", "harness_compile"],
-    "roles": ["reviewer", "patcher"],
+    "modes": [
+      "bare",
+      "harness",
+      "harness_compile"
+    ],
+    "roles": [
+      "reviewer",
+      "patcher"
+    ],
     "repeats": 3,
+    "tasks": [],
     "temperature": 0.6,
     "max_tokens": 4096,
     "reasoning_effort": "",
@@ -29,5 +47,6 @@
   },
   "compile_check_cmd": "python -m py_compile {file}",
   "tasks_dir": "tasks",
-  "results_dir": "results"
+  "results_dir": "results",
+  "_comment_tasks": "run.tasks: empty list = every task in tasks_dir; otherwise a list of task ids, e.g. [\"py-bugfix-3\", \"py-review-3\"]"
 }

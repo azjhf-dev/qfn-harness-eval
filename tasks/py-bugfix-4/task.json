@@ -1,0 +1,3 @@
+{"roles": ["patcher"], "difficulty": 4, "source_file": "allocate.py",
+ "bug": "allocate() splits total_cents into integer shares proportional to weights, but the shares do not sum back to the total. Use largest-remainder apportionment: floor each exact share, then hand the remaining cents to the largest fractional parts; ties go to the earlier weight. A zero total weight must return zeros, not crash. All returned values must be ints summing exactly to total_cents.",
+ "test_cmd": "python test_allocate.py"}

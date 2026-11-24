@@ -1,0 +1,6 @@
+{"roles": ["reviewer"], "difficulty": 2, "source_file": "jobs.py",
+ "seeded_issues": [
+  {"id": "mutable-default", "keywords": ["mutable default", "shared default", "default argument", "shared across instances"]},
+  {"id": "swallowed-errors", "keywords": ["swallow", "silently", "bare except", "except Exception", "ignored", "hides errors"]},
+  {"id": "closure-late-binding", "keywords": ["closure", "late binding", "loop variable", "captured", "lambda"]},
+  {"id": "threads-not-joined", "keywords": ["join", "not joined", "never joined", "thread", "fire and forget"]}]}

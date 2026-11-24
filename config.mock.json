@@ -1,0 +1,29 @@
+{
+  "_comment": "Offline plumbing check against docs/mock_server.py. Not a model result.",
+  "endpoints": {
+    "mock": {"base_url": "http://127.0.0.1:8099/v1", "model": "mock", "api_key_env": ""}
+  },
+  "run": {
+    "modes": ["bare", "harness", "harness_compile"],
+    "roles": ["reviewer", "patcher"],
+    "tasks": [],
+    "repeats": 1,
+    "temperature": 0.0,
+    "max_tokens": 4096,
+    "reasoning_effort": "",
+    "request_timeout_s": 60,
+    "harness_max_turns": 4
+  },
+  "rate_limit": {
+    "min_interval_s": 0.1,
+    "max_concurrency": 1,
+    "max_retries": 1,
+    "backoff_base_s": 1.0,
+    "backoff_max_s": 5.0,
+    "honor_retry_after": true
+  },
+  "harness": {"system_prompt_file": "docs/harness_system_prompt.txt", "external_cmd": ""},
+  "compile_check_cmd": "python -m py_compile {file}",
+  "tasks_dir": "tasks",
+  "results_dir": "results"
+}

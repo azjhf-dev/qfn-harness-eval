@@ -1,0 +1,3 @@
+{"roles": ["patcher"], "difficulty": 3, "source_file": "lrucache.py",
+ "bug": "LRUCache has three bugs: get() does not refresh recency so recently-read entries get evicted; eviction removes the most recently used entry instead of the least; and set() on an existing key counts as a new entry, so the reported size grows and entries are evicted too early. len() must be exact and capacity must never be exceeded.",
+ "test_cmd": "python test_lrucache.py"}

@@ -1,5 +1,35 @@
-{"roles": ["reviewer"], "source_file": "cache.py",
+{
+ "roles": [
+  "reviewer"
+ ],
+ "source_file": "cache.py",
  "seeded_issues": [
-  {"id": "unbounded", "keywords": ["unbounded", "no eviction", "memory leak", "grows"]},
-  {"id": "thread", "keywords": ["thread", "race", "lock", "concurren"]},
-  {"id": "ttl", "keywords": ["ttl", "expir", "stale"]}]}
+  {
+   "id": "unbounded",
+   "keywords": [
+    "unbounded",
+    "no eviction",
+    "memory leak",
+    "grows"
+   ]
+  },
+  {
+   "id": "thread",
+   "keywords": [
+    "thread",
+    "race",
+    "lock",
+    "concurren"
+   ]
+  },
+  {
+   "id": "ttl",
+   "keywords": [
+    "ttl",
+    "expir",
+    "stale"
+   ]
+  }
+ ],
+ "difficulty": 1
+}

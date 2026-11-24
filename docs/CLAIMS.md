@@ -2,7 +2,15 @@
 
 Status: **VERIFIED** (primary source read, 2026-11-24), **CONTRADICTED**, **PARTIAL**, **UNVERIFIED** (no primary evidence found; only the Reddit comment or post says it), **NOT RUN** (needs hardware; no run yet).
 
-Nothing in this repo has been executed on a GPU or Mac yet. "Verified" below means a published primary source says so, not that we reproduced it.
+"Verified" below means a published primary source says so, not that we reproduced it.
+
+## Live runs
+
+| date | endpoint | tasks | result | reading |
+|---|---|---|---|---|
+| 2026-11-24 | Basalt serve, RTX 5090 + 5060 Ti, 262K ctx, IQ3_S (reported by @azjam798276) | the two original difficulty-1 toys | 12/12 runs scored 1.00 (3 modes x 2 roles x 2 repeats) | pipeline works against real hardware; tasks too easy, so no bare/harness separation and nothing about model quality |
+
+The run also caught a portability bug: task commands said `python`, but the box ships only `python3`, so every test exited 127 and scored 0.0 until fixed (commit 934f585, cherry-picked). A first run scoring 0/0 on this repo was the bug, not the model.
 
 ## From the post (OP, r/LocalLLM)
 
@@ -11,8 +19,8 @@ Nothing in this repo has been executed on a GPU or Mac yet. "Verified" below mea
 | 1 | Benchmark is OP's own, based on Salesforce work, two roles (architect/reviewer, developer/patcher) | VERIFIED as description; the benchmark itself is NOT public | Post text; commenter confirms "personal benchmark". No repo or dataset linked. |
 | 2 | Tested Hy4-flash-oQ4h-mtp and Inkling-2-Mini-oQ8e on oMLX 0.8.3, M5 Max 128 GB | PARTIAL | oMLX v0.8.3 exists, published 2026-11-22, adds Inkling 2 Mini and Hy4 optimisations: https://github.com/jundot/omlx/releases/tag/v0.8.3 . OP's run results are not published. |
 | 3 | Hy4-flash fixed more tasks than QFN; QFN finds more issues; Inkling 2 Mini 1h40 vs 20 min | UNVERIFIED | Only in the chart/table the post refers to. We have only the text. Single runs, per OP. |
-| 4 | Qwen 3.8 Flash Next beats Opus 4.6 and Sonnet 5, even bare | UNVERIFIED | One person's private benchmark, single runs for the new models. |
-| 5 | Harness matters a lot (Pi with tuned prompt, plus compile-before-save) | UNVERIFIED here, testable | This repo's three modes test it. Pi: https://github.com/earendil-works/pi (MIT). |
+| 4 | Qwen 3.8 Flash Next beats Opus 4.6 and Sonnet 5, even bare | UNVERIFIED | One person's private benchmark, single runs for the new models. Our 2026-11-24 run tested QFN only and saturated the toy tasks; no Opus/Sonnet endpoint has been run. |
+| 5 | Harness matters a lot (Pi with tuned prompt, plus compile-before-save) | UNVERIFIED here, testable | This repo's three modes test it. The 2026-11-24 live run could not discriminate: bare, harness and harness_compile all scored 1.00 on the difficulty-1 toys. The difficulty 2-4 task set added 2026-11-24 exists to answer this; no discriminating run yet. Pi: https://github.com/earendil-works/pi (MIT). |
 | 6 | DS4 (antirez) most stable with oMLX; MTPLX and MLX Server a bit worse | UNVERIFIED | ds4 exists: https://github.com/antirez/ds4 (MIT). Stability claim has no source. MTPLX publishes speed, not stability: https://mtplx.com/benchmarks/ |
 | 7 | UD-Q4_K_XL / UD-Q5_K_XL are best speed/quality | PARTIAL | Basalt's table shows Q5_K_XL KLD 0.0255 vs Q4_K_XL 0.0496. Speed side not in that table. |
 
@@ -33,7 +41,7 @@ Nothing in this repo has been executed on a GPU or Mac yet. "Verified" below mea
 
 ## Gaps
 
-- OP's benchmark, task set, scoring code and result table are not published. This repo ships a small stand-in (two toy tasks), not OP's benchmark.
+- OP's benchmark, task set, scoring code and result table are not published. This repo ships a stand-in (seven tasks, graded difficulty), not OP's benchmark.
 - OP's chart is an image; its numbers are not in the text we captured.
 - The "2 more replies" under one comment were expanded; nothing else was collapsed, but the thread was 2h old at capture and may have grown.
 - Exact Pi invocation flags were not verified; `harness.external_cmd` is left empty.

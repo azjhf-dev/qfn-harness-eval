@@ -1,0 +1,3 @@
+{"roles": ["patcher"], "difficulty": 2, "source_file": "intervals.py",
+ "bug": "merge_intervals() must accept intervals in any order and merge all that overlap or touch (end == next start), returning a sorted list. It must not mutate its argument. Currently it fails on unsorted input, leaves touching intervals unmerged, and can mutate the caller's list.",
+ "test_cmd": "python test_intervals.py"}
