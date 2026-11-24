@@ -20,8 +20,17 @@ def load_tasks(d):
             t = json.load(open(p)); t["dir"] = os.path.join(d, name); t["id"] = name
             yield t
 
+# Task commands are written as `python ...` / `python3 ...`. Many current distros ship only
+# `python3` (Debian 12+, Ubuntu 24.04+, this container), so an unqualified `python` makes every
+# test exit 127 and every score 0.0 — a silent total failure that looks like bad model output.
+# Point the first `python`/`python3` token at the interpreter running this script.
+_PY = sys.executable or "python3"
+
+def _py_cmd(cmd):
+    return re.sub(r"^\s*python(3(\.\d+)?)?\b", lambda m: _PY, cmd or "")
+
 def sh(cmd, cwd, timeout=120):
-    r = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    r = subprocess.run(_py_cmd(cmd), shell=True, cwd=cwd, capture_output=True, text=True, timeout=timeout)
     return r.returncode, (r.stdout + r.stderr)[-2000:]
 
 def prompt_for(task, role):
@@ -41,7 +50,11 @@ def score_patch(code, task, cfg, work):
     shutil.copytree(task["dir"], work, dirs_exist_ok=True)
     open(os.path.join(work, task["source_file"]), "w").write(code)
     rc, out = sh(task["test_cmd"], work)
-    return (1.0 if rc == 0 else 0.0), {"test_output": out}
+    # Exit 127 / "not found" means the test never ran, so 0.0 would be a lie: record it as an error.
+    broken = rc == 127 or "not found" in out
+    return (0.0 if broken or rc != 0 else 1.0), {
+        "test_output": out, "test_rc": rc,
+        "error": "test command could not run (interpreter missing?) — score not comparable" if broken else None}
 
 def run_one(client, cfg, task, role, mode):
     sys_prompt = open(cfg["harness"]["system_prompt_file"]).read() if mode != "bare" else None
