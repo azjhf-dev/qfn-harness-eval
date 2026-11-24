@@ -12,7 +12,7 @@ The post's benchmark is private (Salesforce-based, no repo). So there is no code
 - A **KLD check** comparing numbers quoted in comments with Basalt's published table.
 
 ## Task set
-Seven tasks in a graded ladder. Difficulty 1 tasks are the original toys; any capable model saturates them (see Status). Difficulty 2-4 is where bare vs harness should start to separate.
+Eleven tasks in a graded ladder. Difficulty 1 tasks are the original toys; any capable model saturates them (see Status). The v2 ladder (difficulty 2-4) also saturated live on 2026-11-24, so v3 adds genuinely hard tasks (multi-file, regression-sensitive, performance) and precision scoring for the reviewer.
 
 | task | role | difficulty | what it tests |
 |---|---|---|---|
@@ -20,11 +20,25 @@ Seven tasks in a graded ladder. Difficulty 1 tasks are the original toys; any ca
 | py-bugfix-2 | patcher | 2 | three bugs (sorting, boundary, mutation) in interval merging |
 | py-bugfix-3 | patcher | 3 | three interacting bugs in an LRU cache (recency, eviction direction, size accounting) |
 | py-bugfix-4 | patcher | 4 | largest-remainder apportionment; exact cent conservation, ties, zero weights |
+| py-bugfix-5 | patcher | 5 | multi-file money-rounding bug across pricing.py + orders.py (round once, ties away from zero, shipping boundary); graded per test file |
+| py-bugfix-6 | patcher | 4 | regression-sensitive: fix cascading month-end clamping without breaking 8 existing recurrence tests (separate test files, graded) |
+| py-bugfix-7 | patcher | 4 | performance: quadratic pair counter must become average-linear; element reads are metered, correctness and no-mutation enforced |
 | py-review-1 | reviewer | 1 | three obvious defects, toy |
 | py-review-2 | reviewer | 2 | four classic defects (mutable default, swallowed errors, closure late binding, unjoined threads) |
 | py-review-3 | reviewer | 3 | five security defects (SQL injection, pickle RCE, path traversal, shell injection, hardcoded secret) |
+| py-review-4 | reviewer | 4 | clean-code control: there is deliberately nothing to find; every reported finding is a false positive |
 
-Patcher scoring is deterministic: the task's test command passes or fails. Reviewer scoring is recall over the planted defects (`seeded_issues` in each task.json, matched by keyword families). Reference solutions live in `docs/reference_solutions/` and are validated by `python3 docs/selftest_tasks.py`; they are for the mock endpoint and maintainers, not shipped to the model. Add your own tasks as `tasks/<id>/task.json`; restrict a run with `run.tasks` in config.json.
+### Scoring
+**Patcher** scoring is deterministic: run the task's test command(s). A single `test_cmd` scores 1.0/0.0; a `test_cmds` list scores the fraction that pass, so partial credit is possible (fix the bug but break the pre-existing regression tests and py-bugfix-6 pays 0.5). Multi-file tasks (`source_files`) accept one fenced block per changed file, each starting with `# file: <name>`; files not returned are kept as shipped.
+
+**Reviewer** scoring is versioned per task (`scoring_version` in task.json):
+
+- **v1** (default for unversioned tasks): recall only - found seeded issues / all seeded issues, matched by keyword families. A review that dumps many keywords scores 1.00 with no penalty.
+- **v2** (all shipped reviewer tasks): recall **plus precision**, still deterministic keyword matching. Two penalties: flagging a listed decoy (`must_not_flag` - topics the code demonstrably does not involve), and reporting more findings than `max_findings`. Weights `w_decoy` (default 0.5) and `w_over` (default 0.25). A task with no seeded issues (py-review-4) is a pure false-positive control. The reviewer prompt now also instructs the model to list only confident real defects and to reply "No issues found." when there are none.
+
+Keyword matching is a blunt instrument: a correct review phrased around a decoy keyword can be penalised, and a seeded issue phrased without any keyword can be missed. v2 makes recall-only dumping costly, which is what the ladder needed; it is not a semantic judge.
+
+Reference solutions live in `docs/reference_solutions/` and are validated by `python3 docs/selftest_tasks.py`; they are for the mock endpoint and maintainers, not shipped to the model. Add your own tasks as `tasks/<id>/task.json`; restrict a run with `run.tasks` in config.json.
 
 ## Run
 ```
@@ -34,15 +48,21 @@ python3 -m evalkit.runner --endpoint basalt-5090
 python3 -m evalkit.report            # summary, flags n<3 as indicative
 python3 -m evalkit.kld_check         # thread KLD claims vs published table
 ```
-Python 3.8+, standard library only. Task format: `tasks/<id>/task.json` (see any of the seven shipped tasks).
+Python 3.8+, standard library only. Task format: `tasks/<id>/task.json` (see any of the eleven shipped tasks).
+
+To run only the new v3 tasks, set in config.json:
+```
+"run": { ..., "tasks": ["py-bugfix-5", "py-bugfix-6", "py-bugfix-7", "py-review-4"] }
+```
 
 ## Settings (all in config.json)
 Endpoints and models, modes, roles, repeats, temperature, max tokens, reasoning effort, timeout, harness prompt file, compile command, task and result dirs. **Rate limits:** `min_interval_s`, `max_concurrency`, retries with exponential backoff, `Retry-After` honoured. Defaults are one request at a time, one second apart.
 
 ## Status
-- **Offline self-test (2026-11-24):** all 7 tasks validated - each buggy source fails its test, each reference solution passes, canned mock answers score 1.00; 21-run end-to-end pass through the runner against the mock endpoint. Plumbing only; no model involved. See docs/SELFTEST.md.
-- **Live run (2026-11-24, reported by @azjam798276):** 12 runs (3 modes x 2 roles x 2 repeats) against a live Basalt serve endpoint (RTX 5090 + 5060 Ti, 262K context, IQ3_S), on the two original difficulty-1 tasks: **12/12 scored 1.00**. This proves the pipeline works end-to-end against real hardware. It says **nothing** about model quality or about bare vs harness: the tasks were too easy to discriminate. Claims 4 and 5 in docs/CLAIMS.md remain UNVERIFIED until a run on the difficulty 2-4 tasks shows separation.
-- **Not yet run:** the difficulty 2-4 task set against any model; any Mac/oMLX endpoint.
+- **Offline self-test (2026-11-24, v3):** all 11 tasks validated - every buggy source scores below 1.0, every reference solution scores 1.0, the multi-file task pays partial credit for a one-file fix, precise canned reviews score 1.00 and noisy/decoy-flagging reviews score strictly less; 33-run end-to-end pass through the runner against the mock endpoint. Plumbing only; no model involved. See docs/SELFTEST.md.
+- **Live run (2026-11-24, reported by @azjam798276):** 12 runs (3 modes x 2 roles x 2 repeats) against a live Basalt serve endpoint (RTX 5090 + 5060 Ti, 262K context, IQ3_S), on the two original difficulty-1 tasks: **12/12 scored 1.00**. Proved the pipeline works end-to-end against real hardware; tasks too easy to discriminate.
+- **Live run (2026-11-24, v2 ladder, reported by @azjam798276):** **21/21 runs scored 1.00** (7 tasks x 3 modes) across bare/harness/harness_compile, including the difficulty-3 security review. The v2 ladder still cannot separate modes. The run also confirmed reviewer scoring was recall-only: a review dumping many keywords scored 1.00 with no penalty. Both gaps are what v3 (this commit) targets.
+- **Not yet run:** the v3 task set (precision scoring, difficulty 4-5) against any model; any Mac/oMLX endpoint. Claims 4 and 5 in docs/CLAIMS.md remain UNVERIFIED until a v3 run shows separation.
 
 ## Fixes
 - `python`/`python3` in task commands is rewritten to the running interpreter, and an unrunnable test command is recorded as an error instead of a fake 0.0 (rc 127 would silently zero every score). Contributed by @azjam798276 from his fork (commit 934f585, cherry-picked).

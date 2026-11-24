@@ -1,0 +1,10 @@
+{"roles": ["reviewer"], "difficulty": 4, "source_file": "bounded_cache.py", "scoring_version": 2,
+ "seeded_issues": [], "max_findings": 0, "w_decoy": 0.5, "w_over": 0.5,
+ "comment": "Clean-code control. There is deliberately nothing to find; every listed finding is a false positive. Tests the precision side of reviewer scoring.",
+ "must_not_flag": [
+  {"id": "unbounded-memory", "keywords": ["unbounded", "no eviction", "memory leak", "grows forever"]},
+  {"id": "missing-ttl", "keywords": ["ttl", "expir", "stale"]},
+  {"id": "race-condition", "keywords": ["race", "thread", "lock", "concurren"]},
+  {"id": "mutable-default", "keywords": ["mutable default", "shared default", "default argument"]},
+  {"id": "pickle", "keywords": ["pickle", "deserial"]},
+  {"id": "sql", "keywords": ["sql"]}]}

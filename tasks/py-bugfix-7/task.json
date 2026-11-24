@@ -1,0 +1,3 @@
+{"roles": ["patcher"], "difficulty": 4, "source_file": "pairsum.py",
+ "bug": "count_pairs(values, target) counts unordered index pairs i < j with values[i] + values[j] == target. It is correct but quadratic: on a 4000-element input it does ~16 million element reads and blows the grader's budget. Make it run in average LINEAR time. Element reads are metered by the test (at most 3 reads per element allowed); duplicates and negative numbers must be handled; the input must not be mutated or required to be a real list (only len() and indexing); results must stay exact.",
+ "test_cmd": "python test_pairsum.py"}

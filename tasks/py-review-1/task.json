@@ -1,35 +1,10 @@
-{
- "roles": [
-  "reviewer"
- ],
- "source_file": "cache.py",
+{"roles": ["reviewer"], "difficulty": 1, "source_file": "cache.py", "scoring_version": 2,
+ "max_findings": 6, "w_decoy": 0.5, "w_over": 0.25,
  "seeded_issues": [
-  {
-   "id": "unbounded",
-   "keywords": [
-    "unbounded",
-    "no eviction",
-    "memory leak",
-    "grows"
-   ]
-  },
-  {
-   "id": "thread",
-   "keywords": [
-    "thread",
-    "race",
-    "lock",
-    "concurren"
-   ]
-  },
-  {
-   "id": "ttl",
-   "keywords": [
-    "ttl",
-    "expir",
-    "stale"
-   ]
-  }
- ],
- "difficulty": 1
-}
+  {"id": "unbounded", "keywords": ["unbounded", "no eviction", "memory leak", "grows"]},
+  {"id": "thread", "keywords": ["thread", "race", "lock", "concurren"]},
+  {"id": "ttl", "keywords": ["ttl", "expir", "stale"]}],
+ "must_not_flag": [
+  {"id": "no-pickle", "keywords": ["pickle", "deserial"]},
+  {"id": "no-sql", "keywords": ["sql"]},
+  {"id": "no-shell", "keywords": ["shell injection", "shell=true", "subprocess"]}]}

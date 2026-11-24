@@ -9,8 +9,9 @@ Status: **VERIFIED** (primary source read, 2026-11-24), **CONTRADICTED**, **PART
 | date | endpoint | tasks | result | reading |
 |---|---|---|---|---|
 | 2026-11-24 | Basalt serve, RTX 5090 + 5060 Ti, 262K ctx, IQ3_S (reported by @azjam798276) | the two original difficulty-1 toys | 12/12 runs scored 1.00 (3 modes x 2 roles x 2 repeats) | pipeline works against real hardware; tasks too easy, so no bare/harness separation and nothing about model quality |
+| 2026-11-24 | same endpoint (reported by @azjam798276) | full v2 ladder (7 tasks) | 21/21 runs scored 1.00 (7 tasks x 3 modes), incl. the difficulty-3 security review | v2 ladder still saturated: no bare/harness separation, nothing about model quality. Also confirmed the reviewer score was recall-only - a keyword-dump review scored 1.00 with no penalty. v3 (same day) adds precision scoring and difficulty 4-5 tasks; no discriminating run yet |
 
-The run also caught a portability bug: task commands said `python`, but the box ships only `python3`, so every test exited 127 and scored 0.0 until fixed (commit 934f585, cherry-picked). A first run scoring 0/0 on this repo was the bug, not the model.
+The first run also caught a portability bug: task commands said `python`, but the box ships only `python3`, so every test exited 127 and scored 0.0 until fixed (commit 934f585, cherry-picked). A first run scoring 0/0 on this repo was the bug, not the model.
 
 ## From the post (OP, r/LocalLLM)
 
@@ -20,7 +21,7 @@ The run also caught a portability bug: task commands said `python`, but the box 
 | 2 | Tested Hy4-flash-oQ4h-mtp and Inkling-2-Mini-oQ8e on oMLX 0.8.3, M5 Max 128 GB | PARTIAL | oMLX v0.8.3 exists, published 2026-11-22, adds Inkling 2 Mini and Hy4 optimisations: https://github.com/jundot/omlx/releases/tag/v0.8.3 . OP's run results are not published. |
 | 3 | Hy4-flash fixed more tasks than QFN; QFN finds more issues; Inkling 2 Mini 1h40 vs 20 min | UNVERIFIED | Only in the chart/table the post refers to. We have only the text. Single runs, per OP. |
 | 4 | Qwen 3.8 Flash Next beats Opus 4.6 and Sonnet 5, even bare | UNVERIFIED | One person's private benchmark, single runs for the new models. Our 2026-11-24 run tested QFN only and saturated the toy tasks; no Opus/Sonnet endpoint has been run. |
-| 5 | Harness matters a lot (Pi with tuned prompt, plus compile-before-save) | UNVERIFIED here, testable | This repo's three modes test it. The 2026-11-24 live run could not discriminate: bare, harness and harness_compile all scored 1.00 on the difficulty-1 toys. The difficulty 2-4 task set added 2026-11-24 exists to answer this; no discriminating run yet. Pi: https://github.com/earendil-works/pi (MIT). |
+| 5 | Harness matters a lot (Pi with tuned prompt, plus compile-before-save) | UNVERIFIED here, testable | This repo's three modes test it. The 2026-11-24 live runs could not discriminate: bare, harness and harness_compile all scored 1.00, first on the difficulty-1 toys (12/12) and then on the full v2 ladder (21/21). The v3 set added 2026-11-24 (precision-scored reviewer, multi-file/regression/performance patcher tasks at difficulty 4-5) exists to answer this; no discriminating run yet. Pi: https://github.com/earendil-works/pi (MIT). |
 | 6 | DS4 (antirez) most stable with oMLX; MTPLX and MLX Server a bit worse | UNVERIFIED | ds4 exists: https://github.com/antirez/ds4 (MIT). Stability claim has no source. MTPLX publishes speed, not stability: https://mtplx.com/benchmarks/ |
 | 7 | UD-Q4_K_XL / UD-Q5_K_XL are best speed/quality | PARTIAL | Basalt's table shows Q5_K_XL KLD 0.0255 vs Q4_K_XL 0.0496. Speed side not in that table. |
 
@@ -41,7 +42,7 @@ The run also caught a portability bug: task commands said `python`, but the box 
 
 ## Gaps
 
-- OP's benchmark, task set, scoring code and result table are not published. This repo ships a stand-in (seven tasks, graded difficulty), not OP's benchmark.
+- OP's benchmark, task set, scoring code and result table are not published. This repo ships a stand-in (eleven tasks, graded difficulty, precision-scored reviewer), not OP's benchmark.
 - OP's chart is an image; its numbers are not in the text we captured.
 - The "2 more replies" under one comment were expanded; nothing else was collapsed, but the thread was 2h old at capture and may have grown.
 - Exact Pi invocation flags were not verified; `harness.external_cmd` is left empty.

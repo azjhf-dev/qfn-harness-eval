@@ -1,0 +1,3 @@
+{"roles": ["patcher"], "difficulty": 4, "source_file": "recurrence.py",
+ "bug": "add_months(d, n) loses the anchor day when clamping cascades: add_months(date(2024, 1, 31), 2) returns 2024-03-29 but must return 2024-03-31 (clamp only against the FINAL month, never intermediate ones). The behaviour in test_recurrence_existing.py is correct as shipped and must not regress; test_recurrence_anchor.py pins the bug. Both test files run and the score is the fraction that pass.",
+ "test_cmds": ["python test_recurrence_existing.py", "python test_recurrence_anchor.py"]}

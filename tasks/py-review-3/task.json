@@ -1,7 +1,12 @@
-{"roles": ["reviewer"], "difficulty": 3, "source_file": "uploads.py",
+{"roles": ["reviewer"], "difficulty": 3, "source_file": "uploads.py", "scoring_version": 2,
+ "max_findings": 10, "w_decoy": 0.5, "w_over": 0.25,
  "seeded_issues": [
   {"id": "sql-injection", "keywords": ["injection", "sql", "f-string", "format string", "concatenat", "parameter"]},
   {"id": "pickle-rce", "keywords": ["pickle", "deserial", "rce", "remote code", "untrusted"]},
   {"id": "path-traversal", "keywords": ["traversal", "../", "sanitis", "sanitiz", "escape the", "outside"]},
   {"id": "shell-injection", "keywords": ["shell=true", "command injection", "shell", "subprocess"]},
-  {"id": "hardcoded-secret", "keywords": ["hardcoded", "hard-coded", "secret", "credential", "key in source", "in the code"]}]}
+  {"id": "hardcoded-secret", "keywords": ["hardcoded", "hard-coded", "secret", "credential", "key in source", "in the code"]}],
+ "must_not_flag": [
+  {"id": "no-unclosed-file", "keywords": ["unclosed", "file handle", "not closed", "resource leak"]},
+  {"id": "no-race", "keywords": ["race", "thread"]},
+  {"id": "no-mutable-default", "keywords": ["mutable default", "shared default", "default argument"]}]}

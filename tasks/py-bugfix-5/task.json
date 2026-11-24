@@ -1,0 +1,4 @@
+{"roles": ["patcher"], "difficulty": 5,
+ "source_files": ["pricing.py", "orders.py"],
+ "bug": "Customer totals come out a cent off and the free-shipping boundary is wrong. The contract, enforced by the tests: a percent discount applies to the line subtotal (unit price x qty) and is rounded ONCE; all money rounding is to the nearest cent, ties away from zero; free shipping applies when the discounted subtotal is AT LEAST FREE_SHIPPING_CENTS. Fix every file that needs it. Public function names and signatures must not change, and all money stays integer cents.",
+ "test_cmds": ["python test_pricing.py", "python test_orders.py"]}
