@@ -181,7 +181,8 @@ def run_one(client, cfg, task, role, mode):
     msgs = ([{"role": "system", "content": sys_prompt}] if sys_prompt else []) + [{"role": "user", "content": prompt_for(task, role)}]
     total = {"seconds": 0.0, "completion_tokens": 0, "turns": 0}
     turns = 1 if mode == "bare" else cfg["run"]["harness_max_turns"]
-    repairs_left = cfg["run"].get("format_repair_retries", 0) if (role == "patcher" and mode != "bare") else 0
+    # Default on (1) so an older config.json without the key repairs; 0 restores v3 behaviour.
+    repairs_left = cfg["run"].get("format_repair_retries", 1) if (role == "patcher" and mode != "bare") else 0
     repair = {"used": False, "attempts": 0, "issues": []}
     text = ""
     for _ in range(turns):

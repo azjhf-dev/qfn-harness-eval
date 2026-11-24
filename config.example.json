@@ -32,7 +32,7 @@
     "request_timeout_s": 900,
     "harness_max_turns": 4,
     "format_repair_retries": 1,
-    "_comment_repair": "format_repair_retries: in harness modes, re-prompt the patcher this many times when a multi-file reply has no usable `# file:` headers (0 = v3 behaviour). Logged per run as repair_used/repair_attempts, so unrepaired runs stay comparable with earlier results. Bare mode never repairs."
+    "_comment_repair": "format_repair_retries: in harness modes, re-prompt the patcher this many times when a multi-file reply has no usable `# file:` headers (absent = 1; 0 = v3 behaviour). Logged per run as repair_used/repair_attempts, so unrepaired runs stay comparable with earlier results. Bare mode never repairs."
   },
   "rate_limit": {
     "min_interval_s": 1.0,
