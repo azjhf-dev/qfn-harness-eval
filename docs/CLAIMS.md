@@ -40,6 +40,21 @@ The first run also caught a portability bug: task commands said `python`, but th
 | 16 | tomByrer | Asked how much VRAM; likely unified memory | OP unanswered in the capture | M5 Max 128 GB is unified. |
 | 17 | paramarioh | Wants Flash with Basalt | Request only | Basalt: https://github.com/jesdga95/basalt (MIT), packs https://huggingface.co/jesdga/Qwen3.8-Flash-Next-Basalt |
 
+## gBench thread (r/LocalLLaMA, 2026-11-24)
+
+Thread: u/jacek2023 posting googlegemma's gBench announcement
+(https://www.reddit.com/r/LocalLLaMA/comments/1y3wyk6/github_googledeepmindgbench_evaluation_serving/,
+score 65, 9 comments at capture; 8 captured - one stayed collapsed). What it adds here: docs/GBENCH.md.
+
+| # | Who | Claim | Status | Evidence |
+|---|---|---|---|---|
+| G1 | OP (googlegemma announcement) | gBench is open source: capability (86 academic suites, 16-case Golden Set, GemmaClaw agentic suite) plus serving performance and stress, against any OpenAI-compatible /v1 endpoint via --remote-endpoint, validated on vLLM and Ollama | VERIFIED as published; NOT RUN here | Repo exists, Apache-2.0, created 2026-10-30: https://github.com/google-deepmind/gbench ; PyPI gbench 0.5.0.post1. README matches the post. "Validated on vLLM and Ollama" is the README's own wording; no run here yet. Checked at commit d3e4283. |
+| G2 | OP | Golden Set: two-sided presence matching, python_exec unit tests, and 4 chat-template cases with plain-turn twins that separate a broken chat template from a weak model | VERIFIED in source, with one limit | docs/golden-set.md and gbench/runners/golden.py at d3e4283. Its own docs state the twin isolation is a structural argument, never measured against a deliberately corrupted template on real weights. |
+| G3 | OP | Stress sweep certifies a rate limit to +-9% with >=1099-request probes against P99 TTFT/ITL SLOs | VERIFIED as published; NOT RUN | README --stress-test description and docs/performance.md. |
+| G4 | readreaddrawdraw | There is a judge fallback that "would mess up the judging quietly" during judge-model outages | PARTIAL | The fallback exists (record_judge_fallback, per-sample scoring_mode judge_fallback, eval_suites/base.py). At d3e4283 it is recorded, not silent: any fallback sample flips the run's top-level scoring_mode to "judge_fallback", judge_failures/judge_outages land on the result, and a warning is logged - but the run does not fail and the number is a lower bound, not the canonical metric. Easy to miss if you only read accuracy. evalkit.gbench_lane ingest flags it. Commenter's blog write-up referenced, not captured. |
+| G5 | Izento, Hrethric vs Kolkoris | A shared public benchmark unifies numbers vs becomes a benchmaxxing target, so private task benchmarks stay necessary | Opinion, both sides | Thread comments (scores 14/7 vs 3). Working position here: gBench for standardized numbers, this repo's private ladder for task numbers. |
+| G6 | No-Library8065 | Half the "x beats y" posts are really different chat templates and sampler settings | Opinion, testable | The Golden Set chat-template pairs are exactly the check; run them per endpoint before quoting task scores. |
+
 ## Gaps
 
 - OP's benchmark, task set, scoring code and result table are not published. This repo ships a stand-in (eleven tasks, graded difficulty, precision-scored reviewer), not OP's benchmark.

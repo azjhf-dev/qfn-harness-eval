@@ -57,6 +57,17 @@ To run only the new v3 tasks, set in config.json:
 "run": { ..., "tasks": ["py-bugfix-5", "py-bugfix-6", "py-bugfix-7", "py-review-4"] }
 ```
 
+## gBench lane (v5)
+Google DeepMind's gBench (announced on r/LocalLLaMA 2026-11-24; https://github.com/google-deepmind/gbench, Apache-2.0) complements this repo: a 16-case Golden Set smoke test with chat-template sensitivity twin pairs, 86 academic eval suites, and serving stress/repeatability measurement, all against any OpenAI-compatible endpoint. It is not vendored (pip install gbench; Python 3.11+, heavy deps). This repo adds a thin lane:
+
+```
+python3 -m evalkit.gbench_lane plan                      # gbench commands from config.json endpoints
+python3 -m evalkit.gbench_lane ingest <gbench-run-dir>   # normalize a run into results/gbench.jsonl
+python3 docs/selftest_gbench_lane.py                     # offline self-test (22 checks)
+```
+
+Ingest flags judge-fallback scoring, non-leaderboard-comparable results and failed configurations. Why it matters here: the Golden Set's chat-template pairs check the serving side of the v3 live run's patcher format failure, and the "x beats y is templates and samplers" concern, before any task score is quoted. Details and traps: docs/GBENCH.md. Not run against any endpoint yet.
+
 ## Settings (all in config.json)
 Endpoints and models, modes, roles, repeats, temperature, max tokens, reasoning effort, timeout, harness prompt file, compile command, task and result dirs, `format_repair_retries` (v4). **Rate limits:** `min_interval_s`, `max_concurrency`, retries with exponential backoff, `Retry-After` honoured. Defaults are one request at a time, one second apart.
 
@@ -65,7 +76,7 @@ Endpoints and models, modes, roles, repeats, temperature, max tokens, reasoning 
 - **Live run (2026-11-24, reported by @azjam798276):** 12 runs (3 modes x 2 roles x 2 repeats) against a live Basalt serve endpoint (RTX 5090 + 5060 Ti, 262K context, IQ3_S), on the two original difficulty-1 tasks: **12/12 scored 1.00**. Proved the pipeline works end-to-end against real hardware; tasks too easy to discriminate.
 - **Live run (2026-11-24, v2 ladder, reported by @azjam798276):** **21/21 runs scored 1.00** (7 tasks x 3 modes) across bare/harness/harness_compile, including the difficulty-3 security review. The v2 ladder still cannot separate modes. The run also confirmed reviewer scoring was recall-only: a review dumping many keywords scored 1.00 with no penalty. Both gaps are what v3 (this commit) targets.
 - **Live run (2026-11-24, v3 tasks, reported by @azjam798276):** first live pass over the hard tasks showed the harness at +0.08 on py-review-4 and 0.00 on py-bugfix-5 (n=1) - the patcher reply came back as one fenced block instead of two `# file:` blocks, so nothing was applied: a format failure the runner could not repair. That gap is what v4 (format-repair retry) targets.
-- **Not yet run:** the v4 runner (format repair on) against any model; any Mac/oMLX endpoint. Claims 4 and 5 in docs/CLAIMS.md remain UNVERIFIED until a run shows separation. When comparing with v3 runs, use rows with `repair_used=false`.
+- **Not yet run:** the v4 runner (format repair on) against any model; any Mac/oMLX endpoint; the v5 gBench lane (no gbench command has been run against any endpoint). Claims 4 and 5 in docs/CLAIMS.md remain UNVERIFIED until a run shows separation. When comparing with v3 runs, use rows with `repair_used=false`.
 
 ## Fixes
 - `python`/`python3` in task commands is rewritten to the running interpreter, and an unrunnable test command is recorded as an error instead of a fake 0.0 (rc 127 would silently zero every score). Contributed by @azjam798276 from his fork (commit 934f585, cherry-picked).
@@ -74,4 +85,5 @@ Endpoints and models, modes, roles, repeats, temperature, max tokens, reasoning 
 - Idea, results and claims: the r/LocalLLM post by its OP and comments by Realistic_Gap_5871, Mil0Mammon, JurandM2, bippityBoppityboux, tomByrer, paramarioh. Quoted only as short facts with links. Their content belongs to them.
 - Basalt (https://github.com/jesdga95/basalt, MIT; fork of Strata, MIT). KLD table copied as data from the model card https://huggingface.co/jesdga/Qwen3.8-Flash-Next-Basalt . Model packs: Qwen Community License 1.0 (derived from Qwen3.8-Flash-Next; Unsloth and NVIDIA quants). Not redistributed here.
 - Pi (https://github.com/earendil-works/pi, MIT), oMLX (https://github.com/jundot/omlx), ds4 (https://github.com/antirez/ds4, MIT), MTPLX (https://mtplx.com/benchmarks/): referenced, not vendored.
+- gBench (https://github.com/google-deepmind/gbench, Apache-2.0): referenced, not vendored. gBench-thread commenters quoted as short facts: Izento, Hrethric, Kolkoris, readreaddrawdraw, YogurtExternal7923, No-Library8065, Milk_Bots. Their content belongs to them.
 - This repo's code: MIT. Fork-only: no issues, PRs or comments were made on any upstream or on Reddit.
