@@ -21,7 +21,16 @@ Scoring versions (per task, "scoring_version" in task.json; absent = 1):
 Multi-file patcher tasks set "source_files" (files the model may change) and optionally
 "context_files" (read-only, shown for context). The model returns each changed file in
 its own fenced block whose first line is `# file: <name>`; files not returned are kept
-as shipped. Single-file tasks keep the original "source_file" behaviour."""
+as shipped. Single-file tasks keep the original "source_file" behaviour.
+
+Format repair (v4): when a patcher reply to a multi-file task has no `# file:` headers,
+or headers naming none of the editable files, nothing can be applied - a format failure,
+not a model failure. In the harness modes the runner can re-prompt once (or
+"format_repair_retries" times) with a format correction before scoring. Logged per run as
+"repair_used" / "repair_attempts" (and detail.repair_issues), so runs without repair stay
+directly comparable with earlier results. Bare mode never repairs (one request, one
+response). A bare-mode format failure now scores 0.0 with detail.format_ok=false instead
+of aborting the run with a KeyError."""
 import argparse, json, os, re, subprocess, sys, tempfile, time, shutil
 from .client import Client
 
@@ -45,6 +54,25 @@ def extract_codes(text):
         if m:
             files[m.group(1)] = (b[:m.start()] + b[m.end():]).strip() + "\n"
     return files or None
+
+
+REPAIR_ASK = ("Format problem: {issue}. Resend the fix as one fenced code block per changed file, "
+              "each block's first line exactly `# file: <name>`, where <name> is one of: {names}. "
+              "Code blocks only, no prose.")
+
+
+def format_issue(text, task):
+    """Patcher reply format check; None when the reply is usable. A multi-file reply with no
+    `# file:` header, or headers naming none of the editable files, applies nothing - repairable
+    by a re-prompt, not a scoreable attempt."""
+    if len(editable_files(task)) < 2:
+        return None
+    codes = extract_codes(text)
+    if codes is None:
+        return "no fenced block starts with `# file: <name>`"
+    if not any(n in set(editable_files(task)) for n in codes):
+        return "no `# file:` header names an editable file (" + ", ".join(editable_files(task)) + ")"
+    return None
 
 
 def load_tasks(d):
@@ -153,13 +181,24 @@ def run_one(client, cfg, task, role, mode):
     msgs = ([{"role": "system", "content": sys_prompt}] if sys_prompt else []) + [{"role": "user", "content": prompt_for(task, role)}]
     total = {"seconds": 0.0, "completion_tokens": 0, "turns": 0}
     turns = 1 if mode == "bare" else cfg["run"]["harness_max_turns"]
+    repairs_left = cfg["run"].get("format_repair_retries", 0) if (role == "patcher" and mode != "bare") else 0
+    repair = {"used": False, "attempts": 0, "issues": []}
     text = ""
     for _ in range(turns):
         text, m = client.chat(msgs)
         total["seconds"] += m["seconds"]; total["completion_tokens"] += m["completion_tokens"] or 0; total["turns"] += 1
-        if role == "reviewer" or mode != "harness_compile":
+        if role == "reviewer":
             break
-        codes = extract_codes(text) or {task["source_file"]: extract_code(text)}
+        issue = format_issue(text, task)
+        if issue and repairs_left > 0:
+            repairs_left -= 1
+            repair["used"] = True; repair["attempts"] += 1; repair["issues"].append(issue)
+            msgs += [{"role": "assistant", "content": text},
+                     {"role": "user", "content": REPAIR_ASK.format(issue=issue, names=", ".join(editable_files(task)))}]
+            continue
+        if mode != "harness_compile":
+            break
+        codes = extract_codes(text) or {editable_files(task)[0]: extract_code(text)}
         with tempfile.TemporaryDirectory() as w:
             bad = ""
             for name, code in codes.items():
@@ -177,9 +216,16 @@ def run_one(client, cfg, task, role, mode):
         if role == "reviewer":
             s, detail = score_review(text, task)
         else:
-            codes = extract_codes(text) or {task["source_file"]: extract_code(text)}
+            codes = extract_codes(text) or {editable_files(task)[0]: extract_code(text)}
             s, detail = apply_and_test(codes, task, w)
-    return {"score": s, "detail": detail, **total}
+            detail["format_ok"] = format_issue(text, task) is None
+    out = {"score": s, "detail": detail, **total}
+    if role == "patcher":
+        out["repair_used"] = repair["used"]
+        out["repair_attempts"] = repair["attempts"]
+        if repair["issues"]:
+            out["detail"]["repair_issues"] = repair["issues"]
+    return out
 
 
 def main(argv=None):

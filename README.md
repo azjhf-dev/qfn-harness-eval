@@ -31,6 +31,8 @@ Eleven tasks in a graded ladder. Difficulty 1 tasks are the original toys; any c
 ### Scoring
 **Patcher** scoring is deterministic: run the task's test command(s). A single `test_cmd` scores 1.0/0.0; a `test_cmds` list scores the fraction that pass, so partial credit is possible (fix the bug but break the pre-existing regression tests and py-bugfix-6 pays 0.5). Multi-file tasks (`source_files`) accept one fenced block per changed file, each starting with `# file: <name>`; files not returned are kept as shipped.
 
+**Format repair (v4).** A multi-file patcher reply with no `# file:` headers (or headers naming none of the editable files) applies nothing - a format failure, not a model failure. In the harness modes the runner re-prompts with a format correction, `run.format_repair_retries` times (default 1; 0 = v3 behaviour; bare mode never repairs). Every run logs `repair_used` and `repair_attempts` as their own fields (plus `detail.repair_issues` and `detail.format_ok`), so runs where no repair happened stay directly comparable with v3 results, and the harness's help is separable from the repair loop's help. A bare-mode format failure now scores 0.0 with `format_ok=false` instead of aborting the run with a KeyError.
+
 **Reviewer** scoring is versioned per task (`scoring_version` in task.json):
 
 - **v1** (default for unversioned tasks): recall only - found seeded issues / all seeded issues, matched by keyword families. A review that dumps many keywords scores 1.00 with no penalty.
@@ -56,13 +58,14 @@ To run only the new v3 tasks, set in config.json:
 ```
 
 ## Settings (all in config.json)
-Endpoints and models, modes, roles, repeats, temperature, max tokens, reasoning effort, timeout, harness prompt file, compile command, task and result dirs. **Rate limits:** `min_interval_s`, `max_concurrency`, retries with exponential backoff, `Retry-After` honoured. Defaults are one request at a time, one second apart.
+Endpoints and models, modes, roles, repeats, temperature, max tokens, reasoning effort, timeout, harness prompt file, compile command, task and result dirs, `format_repair_retries` (v4). **Rate limits:** `min_interval_s`, `max_concurrency`, retries with exponential backoff, `Retry-After` honoured. Defaults are one request at a time, one second apart.
 
 ## Status
 - **Offline self-test (2026-11-24, v3):** all 11 tasks validated - every buggy source scores below 1.0, every reference solution scores 1.0, the multi-file task pays partial credit for a one-file fix, precise canned reviews score 1.00 and noisy/decoy-flagging reviews score strictly less; 33-run end-to-end pass through the runner against the mock endpoint. Plumbing only; no model involved. See docs/SELFTEST.md.
 - **Live run (2026-11-24, reported by @azjam798276):** 12 runs (3 modes x 2 roles x 2 repeats) against a live Basalt serve endpoint (RTX 5090 + 5060 Ti, 262K context, IQ3_S), on the two original difficulty-1 tasks: **12/12 scored 1.00**. Proved the pipeline works end-to-end against real hardware; tasks too easy to discriminate.
 - **Live run (2026-11-24, v2 ladder, reported by @azjam798276):** **21/21 runs scored 1.00** (7 tasks x 3 modes) across bare/harness/harness_compile, including the difficulty-3 security review. The v2 ladder still cannot separate modes. The run also confirmed reviewer scoring was recall-only: a review dumping many keywords scored 1.00 with no penalty. Both gaps are what v3 (this commit) targets.
-- **Not yet run:** the v3 task set (precision scoring, difficulty 4-5) against any model; any Mac/oMLX endpoint. Claims 4 and 5 in docs/CLAIMS.md remain UNVERIFIED until a v3 run shows separation.
+- **Live run (2026-11-24, v3 tasks, reported by @azjam798276):** first live pass over the hard tasks showed the harness at +0.08 on py-review-4 and 0.00 on py-bugfix-5 (n=1) - the patcher reply came back as one fenced block instead of two `# file:` blocks, so nothing was applied: a format failure the runner could not repair. That gap is what v4 (format-repair retry) targets.
+- **Not yet run:** the v4 runner (format repair on) against any model; any Mac/oMLX endpoint. Claims 4 and 5 in docs/CLAIMS.md remain UNVERIFIED until a run shows separation. When comparing with v3 runs, use rows with `repair_used=false`.
 
 ## Fixes
 - `python`/`python3` in task commands is rewritten to the running interpreter, and an unrunnable test command is recorded as an error instead of a fake 0.0 (rc 127 would silently zero every score). Contributed by @azjam798276 from his fork (commit 934f585, cherry-picked).

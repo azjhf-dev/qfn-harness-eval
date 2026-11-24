@@ -8,11 +8,16 @@ noisy review that also flags the decoys and over-reports must score strictly les
 For the clean-code control (no seeded issues), "No issues found." must score 1.0 and
 an invented-findings review must score below it.
 
+Section 3 (v4) drives run_one with a stub client: a multi-file patcher reply with no
+`# file:` headers must trigger one format-repair re-prompt and then score 1.0 with
+repair_used=true; with format_repair_retries=0 the same reply must score below 1.0
+with repair_used=false and detail.format_ok=false.
+
 Run from the repo root:  python3 docs/selftest_tasks.py
 Exit code 0 means every check passed."""
 import json, os, shutil, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from evalkit.runner import load_tasks, score_review, apply_and_test, editable_files
+from evalkit.runner import load_tasks, score_review, apply_and_test, editable_files, run_one
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SOL = os.path.join(ROOT, "docs", "reference_solutions")
@@ -61,4 +66,43 @@ for t in load_tasks(os.path.join(ROOT, "tasks")):
             check(f"{t['id']} noisy", s_noisy < s_precise,
                   f"(noisy review scores {s_noisy:.2f} < precise {s_precise:.2f}; "
                   f"decoys hit {d_noisy.get('decoy_hits')}, findings {d_noisy.get('findings')})")
+# --- Section 3: format repair (v4), stub client, no server ---------------------------------
+class StubClient:
+    def __init__(self, replies):
+        self.replies = list(replies); self.seen = []
+    def chat(self, msgs):
+        self.seen.append(msgs[-1]["content"])
+        return self.replies.pop(0), {"seconds": 0.01, "completion_tokens": 10}
+
+TASKS = {t["id"]: t for t in load_tasks(os.path.join(ROOT, "tasks"))}
+t5 = TASKS["py-bugfix-5"]
+ref5 = {f: open(os.path.join(SOL, "py-bugfix-5", f)).read() for f in editable_files(t5)}
+multi_ok = "\n\n".join("```python\n# file: " + f + "\n" + ref5[f] + "\n```" for f in editable_files(t5))
+multi_bad = "```python\n" + ref5[editable_files(t5)[0]] + "\n```"   # one block, no `# file:` header
+base_cfg = {"harness": {"system_prompt_file": os.path.join(ROOT, "docs", "harness_system_prompt.txt")},
+            "run": {"harness_max_turns": 4},
+            "compile_check_cmd": "python -m py_compile {file}"}
+
+stub = StubClient([multi_bad, multi_ok])
+cfg = json.loads(json.dumps(base_cfg)); cfg["run"]["format_repair_retries"] = 1
+r = run_one(stub, cfg, t5, "patcher", "harness")
+check("v4 repair triggers", r["repair_used"] and r["repair_attempts"] == 1,
+      f"(repair_used={r['repair_used']}, attempts={r['repair_attempts']})")
+check("v4 repair re-prompts", any("Format problem" in s for s in stub.seen),
+      "(a later user message carries the format correction)")
+check("v4 repair scores", r["score"] == 1.0 and r["detail"]["format_ok"],
+      f"(score {r['score']:.2f}, format_ok={r['detail']['format_ok']})")
+
+stub = StubClient([multi_bad])
+cfg = json.loads(json.dumps(base_cfg)); cfg["run"]["format_repair_retries"] = 0
+r = run_one(stub, cfg, t5, "patcher", "harness")
+check("v4 repair off", not r["repair_used"] and r["score"] < 1.0 and not r["detail"]["format_ok"],
+      f"(repair_used={r['repair_used']}, score {r['score']:.2f}, format_ok={r['detail']['format_ok']})")
+
+stub = StubClient([multi_bad])
+cfg = json.loads(json.dumps(base_cfg)); cfg["run"]["format_repair_retries"] = 1
+r = run_one(stub, cfg, t5, "patcher", "bare")
+check("v4 bare never repairs", not r["repair_used"] and not r["detail"]["format_ok"],
+      f"(repair_used={r['repair_used']}, format_ok={r['detail']['format_ok']})")
+
 sys.exit(0 if ok else 1)

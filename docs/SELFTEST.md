@@ -36,6 +36,17 @@ everywhere.
 
 Result on 2026-11-24 (v3): 33 runs (11 tasks x 3 modes), all 1.00, then
 `python3 -m evalkit.report` summarised all six role x mode cells.
+Re-run on 2026-11-24 (v4): same 33 runs, all 1.00.
+
+## 3. Format repair (v4)
+Covered in `docs/selftest_tasks.py` (section 3) with a stub client, no server:
+a multi-file patcher reply with no `# file:` headers must trigger exactly one
+format-repair re-prompt (the correction message is checked), then score 1.00
+with `repair_used=true`. With `format_repair_retries=0` the same reply scores
+below 1.0 with `repair_used=false` and `detail.format_ok=false`. Bare mode
+never repairs.
+
+Result on 2026-11-24 (v4): all five repair checks OK (27 checks total).
 
 Both checks exercise the plumbing only - prompting, multi-file extraction,
 compile check, scoring, reporting. Neither says anything about any model.
